@@ -19,11 +19,17 @@ public class Client {
 	BufferedReader input;
 	OutputStreamWriter out;
 	//Tile gameMap [][] = new Tile();
-	//Initializeds object for holding updates from server
+	//Initialized object for holding updates from server
 	LinkedBlockingQueue<Map<String, Object>> updates;
 	//Holds a list of units
 	Map<Long, Unit> units;
-
+	
+    // Field to store the initial game information
+    private JSONObject gameInfo;
+//    int mapWidth = ((Long) gameInfo.get("map_width")).intValue();
+//    int mapHeight = ((Long) gameInfo.get("map_height")).intValue();
+//    JSONObject[][] mapArray = new JSONObject[2 * mapWidth + 1][2 * mapHeight + 1];
+    
 	public Client(Socket socket) {
 		updates = new LinkedBlockingQueue<Map<String, Object>>();
 		units = new HashMap<Long, Unit>();
@@ -48,6 +54,13 @@ public class Client {
 			while ((nextLine = input.readLine()) != null) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> update = (Map<String, Object>) JSONValue.parse(nextLine.trim());
+				
+                // Store gameInfo if it hasn't been set yet
+                if (gameInfo == null) {
+                    gameInfo = new JSONObject(update);
+                    System.out.println("Game info received: " + gameInfo.toJSONString());
+                }
+				
 				updates.add(update);
 			}
 		} catch (IOException e) {
@@ -77,9 +90,20 @@ public class Client {
 			
 			System.out.println("Processing update: " + update);
 			@SuppressWarnings("unchecked")
+			
+			Collection<JSONObject> tileUpdates = (Collection<JSONObject>) update.get("tile_updates");
+			tileUpdate(tileUpdates);
 			Collection<JSONObject> unitUpdates = (Collection<JSONObject>) update.get("unit_updates");
 			addUnitUpdate(unitUpdates);
 		}
+	}
+	
+	//Adds a new unit to the units list upon unit creation
+	private void tileUpdate(Collection<JSONObject> tileUpdates) {
+
+		tileUpdates.forEach((tile) -> {
+			
+		});
 	}
 	
 	//Adds a new unit to the units list upon unit creation
@@ -185,6 +209,7 @@ public class Client {
 		//Instantiates possible directions
 		String[] directions = {"N","E","S","W"};
 		String direction = directions[(int) Math.floor(Math.random() * 4)];
+	
 		
 		command.put("command", "MOVE");
 		command.put("dir", direction);
