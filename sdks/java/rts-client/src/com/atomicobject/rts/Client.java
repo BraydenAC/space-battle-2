@@ -18,7 +18,7 @@ public class Client {
 	
 	BufferedReader input;
 	OutputStreamWriter out;
-	
+	//Tile gameMap [][] = new Tile();
 	//Initializeds object for holding updates from server
 	LinkedBlockingQueue<Map<String, Object>> updates;
 	//Holds a list of units
