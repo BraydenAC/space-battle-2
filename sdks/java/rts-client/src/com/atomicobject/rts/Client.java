@@ -18,7 +18,10 @@ public class Client {
 	
 	BufferedReader input;
 	OutputStreamWriter out;
+	
+	//Initializeds object for holding updates from server
 	LinkedBlockingQueue<Map<String, Object>> updates;
+	//Holds a list of units
 	Map<Long, Unit> units;
 
 	public Client(Socket socket) {
@@ -38,6 +41,7 @@ public class Client {
 		new Thread(() -> runClientLoop()).start();
 	}
 	
+	//Takes in map update from server then appends it to the end of the persistant updates map
 	public void readUpdatesFromServer() {
 		String nextLine;
 		try {
@@ -55,6 +59,7 @@ public class Client {
 		System.out.println("Starting client update/command processing ...");
 		try {
 			while (true) {
+				//While the server is still running, do these two processes one at a time in loop
 				processUpdateFromServer();
 				respondWithCommands();
 			}
@@ -63,17 +68,21 @@ public class Client {
 		}
 		closeStreams();
 	}
-
+	
+	//Takes in most recent update from server
 	private void processUpdateFromServer() throws InterruptedException {
+		//Instantiates update as the most recent version of the map
 		Map<String, Object> update = updates.take();
 		if (update != null) {
-			System.out.println("Processing udpate: " + update);
+			
+			System.out.println("Processing update: " + update);
 			@SuppressWarnings("unchecked")
 			Collection<JSONObject> unitUpdates = (Collection<JSONObject>) update.get("unit_updates");
 			addUnitUpdate(unitUpdates);
 		}
 	}
-
+	
+	//Adds a new unit to the units list upon unit creation
 	private void addUnitUpdate(Collection<JSONObject> unitUpdates) {
 		unitUpdates.forEach((unitUpdate) -> {
 			Long id = (Long) unitUpdate.get("id");
@@ -93,18 +102,34 @@ public class Client {
 
 	@SuppressWarnings("unchecked")
 	private JSONArray buildCommandList() {
-		String[] directions = {"N","E","S","W"};
-		String direction = directions[(int) Math.floor(Math.random() * 4)];
 
+		//Gets an array of ids from the list of units
 		Long[] unitIds = units.keySet().toArray(new Long[units.size()]);
-		Long unitId = unitIds[(int) Math.floor(Math.random() * unitIds.length)];
-
+		
 		JSONArray commands = new JSONArray();
-		JSONObject command = new JSONObject();	
-		command.put("command", "MOVE");
-		command.put("dir", direction);
-		command.put("unit", unitId);
-		commands.add(command);
+		
+		for(Long unitId : unitIds) {
+			Unit unit = units.get(unitId);
+			JSONObject Command = new JSONObject();	
+			if(unit.status.equals("idle")) {
+			switch (unit.type) {
+				case "tank":
+					Command = handleTank(unit);
+					break;
+				case "scout":
+					Command = handleScout(unit);
+					break;
+				case "worker":
+					Command = handleWorker(unit);
+					break;
+				case "base":
+					Command = handleBase(unit);
+					break;
+			}
+			}
+			commands.add(Command);
+		}
+
 		return commands;
 	}
 
@@ -129,5 +154,47 @@ public class Client {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
+	}
+	
+	private JSONObject handleTank(Unit unit) {
+		JSONObject command = new JSONObject();
+		//Instantiates possible directions
+		String[] directions = {"N","E","S","W"};
+		String direction = directions[(int) Math.floor(Math.random() * 4)];
+		
+		command.put("command", "MOVE");
+		command.put("dir", direction);
+		command.put("unit", unit.id);
+		
+		return command;
+	}
+	private JSONObject handleScout(Unit unit) {
+		JSONObject command = new JSONObject();
+		//Instantiates possible directions
+		String[] directions = {"N","E","S","W"};
+		String direction = directions[(int) Math.floor(Math.random() * 4)];
+		
+		command.put("command", "MOVE");
+		command.put("dir", direction);
+		command.put("unit", unit.id);
+		
+		return command;
+	}
+	private JSONObject handleWorker(Unit unit) {
+		JSONObject command = new JSONObject();	
+		//Instantiates possible directions
+		String[] directions = {"N","E","S","W"};
+		String direction = directions[(int) Math.floor(Math.random() * 4)];
+		
+		command.put("command", "MOVE");
+		command.put("dir", direction);
+		command.put("unit", unit.id);
+		
+		return command;
+	}
+	private JSONObject handleBase(Unit unit) {
+		JSONObject command = new JSONObject();
+		command = null;
+		return command;
 	}
 }
